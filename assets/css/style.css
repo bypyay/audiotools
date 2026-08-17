@@ -158,9 +158,10 @@ a:hover {
   margin: 0 auto 20px;
 }
 
+.tool-search-box input[type="text"],
 .tool-search-box input {
   width: 100%;
-  padding: 14px 20px 14px 48px;
+  padding: 14px 20px 14px 52px !important;
   font-size: 1rem;
   border: 2px solid var(--border);
   border-radius: 50px;
@@ -176,10 +177,14 @@ a:hover {
 
 .tool-search-box .search-icon {
   position: absolute;
-  left: 18px;
+  left: 20px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--ink-muted);
+  pointer-events: none;
+  z-index: 2;
+  display: flex;
+  align-items: center;
 }
 
 .category-tabs {
