@@ -4,16 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Audio to Text Converter Online Free â€” Speech to Text &amp; Transcript Generator | Daily1Step</title>
-<meta name="description" content="Transcribe audio to text online for free. Convert MP3, WAV, M4A, OGG, or live voice recording into text transcript and subtitles (.srt, .vtt, .txt). 100% private, in-browser processing.">
+<meta name="description" content="100% In-browser AI audio to text transcriber. Convert MP3, WAV, M4A, OGG audio files and live mic recording into accurate text transcripts and subtitles (.srt, .vtt, .txt). Free &amp; private.">
 <link rel="canonical" href="https://bypyay.github.io/audiotools/tools/audio-to-text/">
 <meta property="og:title" content="Audio to Text Converter Online Free â€” Speech to Text &amp; Transcript Generator">
-<meta property="og:description" content="Transcribe audio to text online for free. Convert MP3, WAV, M4A, OGG, or live voice recording into text transcript and subtitles (.srt, .vtt, .txt). 100% private, in-browser processing.">
+<meta property="og:description" content="100% In-browser AI audio to text transcriber. Convert MP3, WAV, M4A, OGG audio files and live mic recording into accurate text transcripts and subtitles (.srt, .vtt, .txt). Free &amp; private.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://bypyay.github.io/audiotools/tools/audio-to-text/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="robots" content="index, follow">
 <link rel="stylesheet" href="../assets/css/style.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<!-- In-Browser Whisper AI Engine (Transformers.js WASM) -->
+<script src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js"></script>
 <style>
 /* Dedicated Audio to Transcript Studio Styles */
 .transcript-mode-nav {
@@ -126,6 +128,30 @@
   border-radius: 6px;
 }
 
+/* AI Progress Bar */
+.ai-progress-container {
+  display: none;
+  background: #f0fdfa;
+  border: 1.5px solid #99f6e4;
+  border-radius: 12px;
+  padding: 18px;
+  margin: 16px 0;
+}
+.ai-progress-track {
+  width: 100%;
+  height: 8px;
+  background: #ccfbf1;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+.ai-progress-fill {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #0d9488, #0284c7);
+  transition: width 0.3s ease;
+}
+
 /* Stats Pill Bar */
 .transcript-stats-bar {
   display: flex;
@@ -231,7 +257,7 @@
       "@type": "WebApplication",
       "name": "Audio to Text Converter & Speech Transcriber",
       "url": "https://bypyay.github.io/audiotools/tools/audio-to-text/",
-      "description": "Convert audio recordings, podcasts, voice notes, and MP3 files into text transcript and subtitles (.srt, .vtt, .txt). 100% Free and in-browser.",
+      "description": "In-browser AI audio to text transcriber. Convert audio files and live mic recordings into text transcripts and subtitles (.srt, .vtt, .txt). 100% Free and in-browser.",
       "applicationCategory": "MultimediaApplication",
       "operatingSystem": "All modern browsers",
       "offers": {
@@ -269,13 +295,13 @@
 
     <div class="tool-header">
       <h1>Audio to Text Converter &amp; Transcriber</h1>
-      <p>Convert audio files (MP3, WAV, M4A, AAC, OGG) or live voice recording into accurate text transcripts and subtitles (.srt, .vtt, .txt) with zero server uploads.</p>
+      <p>Powered by in-browser Whisper AI. Convert audio files (MP3, WAV, M4A, AAC, OGG) or live voice recording into accurate text transcripts and subtitles (.srt, .vtt, .txt) with zero server uploads.</p>
     </div>
 
     <!-- Mode Selector Tabs -->
     <div class="transcript-mode-nav" style="max-width:800px; margin:0 auto 20px;">
       <button type="button" class="mode-nav-btn active" id="tabUpload" onclick="setTranscribeMode('upload')">
-        <i class="fa-solid fa-file-audio"></i> Transcribe Audio File
+        <i class="fa-solid fa-file-audio"></i> Transcribe Audio File (AI Whisper)
       </button>
       <button type="button" class="mode-nav-btn" id="tabLive" onclick="setTranscribeMode('live')">
         <i class="fa-solid fa-microphone"></i> Live Voice Dictation
@@ -308,24 +334,22 @@
       <div style="display:flex; align-items:center; gap:8px;">
         <label style="font-weight:700; font-size:0.88rem; color:#0f172a;"><i class="fa-solid fa-language" style="color:#0284c7;"></i> Speech Language:</label>
         <select id="speechLangSelect" class="calc-select" style="padding:6px 12px; border-radius:8px; border:1px solid #cbd5e1; font-family:inherit; font-weight:600;">
-          <option value="en-US" selected>English (United States)</option>
-          <option value="en-GB">English (United Kingdom)</option>
-          <option value="en-IN">English (India)</option>
-          <option value="hi-IN">Hindi (à¤¹à¤¿à¤‚à¤¦à¥€)</option>
-          <option value="es-ES">Spanish (EspaÃ±ol)</option>
-          <option value="fr-FR">French (FranÃ§ais)</option>
-          <option value="de-DE">German (Deutsch)</option>
-          <option value="it-IT">Italian (Italiano)</option>
-          <option value="pt-BR">Portuguese (PortuguÃªs)</option>
-          <option value="ru-RU">Russian (Ð ÑƒÑÑÐºÐ¸Ð¹)</option>
-          <option value="ja-JP">Japanese (æ—¥æœ¬èªž)</option>
-          <option value="zh-CN">Chinese (Mandarin ä¸­æ–‡)</option>
-          <option value="ar-SA">Arabic (Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©)</option>
-          <option value="bn-IN">Bengali (à¦¬à¦¾à¦‚à¦²à¦¾)</option>
-          <option value="mr-IN">Marathi (à¤®à¤°à¤¾à¤ à¥€)</option>
-          <option value="ta-IN">Tamil (à®¤à®®à®¿à®´à¯)</option>
-          <option value="te-IN">Telugu (à°¤à±†à°²à±à°—à±)</option>
-          <option value="ur-PK">Urdu (Ø§Ø±Ø¯Ùˆ)</option>
+          <option value="english" selected>English</option>
+          <option value="hindi">Hindi (à¤¹à¤¿à¤‚à¤¦à¥€)</option>
+          <option value="spanish">Spanish (EspaÃ±ol)</option>
+          <option value="french">French (FranÃ§ais)</option>
+          <option value="german">German (Deutsch)</option>
+          <option value="italian">Italian (Italiano)</option>
+          <option value="portuguese">Portuguese (PortuguÃªs)</option>
+          <option value="russian">Russian (Ð ÑƒÑÑÐºÐ¸Ð¹)</option>
+          <option value="japanese">Japanese (æ—¥æœ¬èªž)</option>
+          <option value="chinese">Chinese (ä¸­æ–‡)</option>
+          <option value="arabic">Arabic (Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©)</option>
+          <option value="bengali">Bengali (à¦¬à¦¾à¦‚à¦²à¦¾)</option>
+          <option value="marathi">Marathi (à¤®à¤°à¤¾à¤ à¥€)</option>
+          <option value="tamil">Tamil (à®¤à®®à®¿à®´à¯)</option>
+          <option value="telugu">Telugu (à°¤à±†à°²à±à°—à±)</option>
+          <option value="urdu">Urdu (Ø§Ø±Ø¯Ùˆ)</option>
         </select>
       </div>
 
@@ -337,6 +361,17 @@
       </div>
     </div>
 
+    <!-- AI Progress Container -->
+    <div id="aiProgressBox" class="ai-progress-container" style="max-width:800px; margin:20px auto 0;">
+      <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.9rem; font-weight:700; color:#0f766e;">
+        <span id="aiProgressText"><i class="fa-solid fa-gear fa-spin"></i> Initializing In-Browser AI Engineâ€¦</span>
+        <span id="aiProgressPct">0%</span>
+      </div>
+      <div class="ai-progress-track">
+        <div class="ai-progress-fill" id="aiProgressBar"></div>
+      </div>
+    </div>
+
     <!-- Interactive Transcription Workspace (Revealed after audio load / mic start) -->
     <div id="transcriptWorkspace" class="transcript-workspace-grid" style="display:none;">
       <!-- Left Player Card -->
@@ -344,7 +379,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
           <h3 style="font-size:1.1rem; font-weight:800; color:#0f172a; margin:0;" id="audioFileNameTitle">Audio Playback</h3>
           <span id="transcribeLiveBadge" class="live-indicator" style="display:none;">
-            <span class="live-pulse"></span> Transcribingâ€¦
+            <span class="live-pulse"></span> AI Transcribingâ€¦
           </span>
         </div>
 
@@ -383,8 +418,8 @@
 
         <!-- Transcribe Audio File CTA -->
         <div style="margin-top:20px; padding-top:16px; border-top:1px solid #e2e8f0;">
-          <button type="button" id="btnStartFileTranscription" class="btn-export-opt" style="width:100%; height:44px; background:#0284c7; color:#fff; font-size:0.95rem; justify-content:center;" onclick="startAudioFileTranscription()">
-            <i class="fa-solid fa-wand-magic-sparkles"></i> Transcribe Audio to Text
+          <button type="button" id="btnStartFileTranscription" class="btn-export-opt" style="width:100%; height:46px; background:linear-gradient(135deg, #0284c7, #0d9488); color:#fff; font-size:1rem; justify-content:center; box-shadow:0 4px 12px rgba(2,132,199,0.3);" onclick="startAudioFileTranscription()">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Transcribe Audio File with AI
           </button>
         </div>
       </div>
@@ -406,7 +441,7 @@
         </div>
 
         <!-- Editable Transcript Area -->
-        <textarea id="transcriptOutput" class="transcript-textarea" placeholder="Your transcribed text will appear here automatically in real-time..."></textarea>
+        <textarea id="transcriptOutput" class="transcript-textarea" placeholder="Your transcribed text will appear here automatically with timestamps..."></textarea>
 
         <!-- Quick Text Cleanup Actions -->
         <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
@@ -456,7 +491,7 @@
           </div>
           <div class="step-card">
             <div class="step-num">2</div>
-            <h4>Select Language</h4>
+            <h4>Select Language &amp; AI Engine</h4>
             <p>Choose from over 20+ languages including English, Hindi, Spanish, French, and German.</p>
           </div>
           <div class="step-card">
@@ -468,7 +503,7 @@
 
         <h2>Why Use Daily1Step Audio Transcriber?</h2>
         <ul>
-          <li><strong>100% Private &amp; Secure:</strong> Runs directly inside your browser. Audio is never stored on external cloud servers.</li>
+          <li><strong>100% Private &amp; Secure:</strong> Runs directly inside your browser using Whisper AI WASM. Audio is never stored on external cloud servers.</li>
           <li><strong>Automatic Timestamps:</strong> Generates synchronized subtitle timecodes for YouTube and video editors.</li>
           <li><strong>Export Subtitles (.SRT &amp; .VTT):</strong> Instantly create captions for your video content.</li>
           <li><strong>No Limits &amp; Always Free:</strong> Transcribe unlimited audio files without account registration.</li>
@@ -500,7 +535,7 @@
               <span style="font-size:1.2rem;">+</span>
             </button>
             <div class="faq-answer" style="display:none;">
-              <p>No. All speech processing is executed on your local client machine via HTML5 Web Speech and Web Audio APIs.</p>
+              <p>No. All speech processing is executed on your local client machine via Whisper AI and HTML5 Web Audio APIs.</p>
             </div>
           </div>
         </div>
@@ -559,14 +594,17 @@
 <script src="../assets/js/audio-core.js"></script>
 <script>
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// AUDIO TO TEXT TRANSCRIPTION CONTROLLER
+// IN-BROWSER WHISPER AI & WEB SPEECH HYBRID PIPELINE
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 var currentAudioBuffer = null;
+var currentAudioFile = null;
 var audioElement = new Audio();
 var recognition = null;
 var isLiveRecording = false;
-var transcriptSegments = []; // array of { time: '00:01', text: 'Hello' }
+var transcriptSegments = [];
 var activeMode = 'upload';
+var whisperPipeline = null;
+var isWhisperLoading = false;
 
 // Mode Switching
 function setTranscribeMode(mode) {
@@ -607,6 +645,7 @@ if (dropzone && fileInput) {
 }
 
 function loadAudioFile(file) {
+  currentAudioFile = file;
   document.getElementById('audioFileNameTitle').textContent = file.name;
   var objectUrl = URL.createObjectURL(file);
   audioElement.src = objectUrl;
@@ -674,17 +713,161 @@ function setPlaybackSpeed(spd) {
   audioElement.playbackRate = parseFloat(spd);
 }
 
-// Speech Recognition (Web Speech API)
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// 16kHz PCM CONVERTER FOR WHISPER AI
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+function convertAudioBufferTo16kHz(audioBuffer) {
+  var targetSampleRate = 16000;
+  var offlineCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(
+    1,
+    Math.ceil(audioBuffer.duration * targetSampleRate),
+    targetSampleRate
+  );
+  var source = offlineCtx.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(offlineCtx.destination);
+  source.start(0);
+
+  return offlineCtx.startRendering().then(function(renderedBuffer) {
+    return renderedBuffer.getChannelData(0); // Float32Array at 16kHz
+  });
+}
+
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// WHISPER AI TRANSCRIPTION PIPELINE
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+async function startAudioFileTranscription() {
+  if (!currentAudioBuffer) {
+    alert("Please upload an audio file first.");
+    return;
+  }
+
+  var progressBox = document.getElementById('aiProgressBox');
+  var progressText = document.getElementById('aiProgressText');
+  var progressPct = document.getElementById('aiProgressPct');
+  var progressBar = document.getElementById('aiProgressBar');
+  var liveBadge = document.getElementById('transcribeLiveBadge');
+  var btn = document.getElementById('btnStartFileTranscription');
+
+  progressBox.style.display = 'block';
+  liveBadge.style.display = 'inline-flex';
+  btn.disabled = true;
+  btn.style.opacity = '0.6';
+
+  try {
+    // 1. Initialize Whisper AI Model
+    if (!whisperPipeline) {
+      progressText.innerHTML = '<i class="fa-solid fa-download fa-bounce"></i> Loading In-Browser Whisper AI Model (~39MB)...';
+      
+      var transformers = window.transformers;
+      if (!transformers) {
+        throw new Error("Transformers.js library is loading. Please check internet connection.");
+      }
+
+      transformers.env.allowLocalModels = false;
+      transformers.env.useBrowserCache = true;
+
+      whisperPipeline = await transformers.pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny', {
+        quantized: true,
+        progress_callback: function(d) {
+          if (d.status === 'progress') {
+            var pct = Math.round(d.progress || 0);
+            progressPct.textContent = pct + '%';
+            progressBar.style.width = pct + '%';
+          }
+        }
+      });
+    }
+
+    // 2. Convert AudioBuffer to 16kHz PCM
+    progressText.innerHTML = '<i class="fa-solid fa-wave-square"></i> Decoding & resampling audio waveform to 16kHzâ€¦';
+    progressBar.style.width = '40%';
+    progressPct.textContent = '40%';
+
+    var pcmData = await convertAudioBufferTo16kHz(currentAudioBuffer);
+
+    // 3. Run Inference
+    progressText.innerHTML = '<i class="fa-solid fa-brain fa-pulse"></i> AI Transcribing Speech to Textâ€¦';
+    progressBar.style.width = '70%';
+    progressPct.textContent = '70%';
+
+    var selectedLang = document.getElementById('speechLangSelect').value || 'english';
+
+    var output = await whisperPipeline(pcmData, {
+      chunk_length_s: 30,
+      stride_length_s: 5,
+      return_timestamps: true,
+      language: selectedLang,
+      task: 'transcribe'
+    });
+
+    // 4. Process Outputs & Timestamps
+    transcriptSegments = [];
+    if (output.chunks && output.chunks.length > 0) {
+      output.chunks.forEach(function(chunk) {
+        var start = chunk.timestamp ? chunk.timestamp[0] : 0;
+        var timeStr = AudioCore.formatTime(start);
+        transcriptSegments.push({ time: timeStr, text: chunk.text.trim() });
+      });
+    } else {
+      transcriptSegments.push({ time: '00:00', text: output.text.trim() });
+    }
+
+    updateTranscriptView();
+
+    progressBar.style.width = '100%';
+    progressPct.textContent = '100%';
+    progressText.innerHTML = '<i class="fa-solid fa-check-circle" style="color:#10b981;"></i> Transcription Complete!';
+
+    setTimeout(function() {
+      progressBox.style.display = 'none';
+    }, 2500);
+
+  } catch (err) {
+    console.error("Transcription error:", err);
+    progressText.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#ef4444;"></i> ' + err.message;
+    alert("Transcription error: " + err.message);
+  } finally {
+    liveBadge.style.display = 'none';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  }
+}
+
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// LIVE MICROPHONE DICTATION (Web Speech API)
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function initSpeechEngine() {
   var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
-    alert("Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.");
+    alert("Live voice dictation requires a modern browser like Chrome, Edge, or Safari.");
     return null;
   }
   var rec = new SpeechRecognition();
   rec.continuous = true;
   rec.interimResults = true;
-  rec.lang = document.getElementById('speechLangSelect').value || 'en-US';
+
+  var langMap = {
+    'english': 'en-US',
+    'hindi': 'hi-IN',
+    'spanish': 'es-ES',
+    'french': 'fr-FR',
+    'german': 'de-DE',
+    'italian': 'it-IT',
+    'portuguese': 'pt-BR',
+    'russian': 'ru-RU',
+    'japanese': 'ja-JP',
+    'chinese': 'zh-CN',
+    'arabic': 'ar-SA',
+    'bengali': 'bn-IN',
+    'marathi': 'mr-IN',
+    'tamil': 'ta-IN',
+    'telugu': 'te-IN',
+    'urdu': 'ur-PK'
+  };
+
+  var selected = document.getElementById('speechLangSelect').value || 'english';
+  rec.lang = langMap[selected] || 'en-US';
 
   rec.onresult = function(event) {
     var interimTranscript = '';
@@ -707,21 +890,6 @@ function initSpeechEngine() {
   return rec;
 }
 
-function startAudioFileTranscription() {
-  if (!recognition) recognition = initSpeechEngine();
-  if (!recognition) return;
-
-  recognition.lang = document.getElementById('speechLangSelect').value || 'en-US';
-  document.getElementById('transcribeLiveBadge').style.display = 'inline-flex';
-  
-  try {
-    recognition.start();
-  } catch(e) {}
-
-  audioElement.play();
-  document.getElementById('playIcon').className = 'fa-solid fa-pause';
-}
-
 function toggleLiveMic() {
   var btn = document.getElementById('btnLiveMicToggle');
   var heading = document.getElementById('micStatusHeading');
@@ -730,7 +898,6 @@ function toggleLiveMic() {
   if (!isLiveRecording) {
     if (!recognition) recognition = initSpeechEngine();
     if (!recognition) return;
-    recognition.lang = document.getElementById('speechLangSelect').value || 'en-US';
     try {
       recognition.start();
     } catch(e) {}
@@ -749,14 +916,16 @@ function toggleLiveMic() {
   }
 }
 
-// Transcript View & Formatting
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// TRANSCRIPT FORMATTING & EXPORT
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function updateTranscriptView(interim) {
   var withTimestamps = document.getElementById('chkTimestamps').checked;
   var output = '';
 
   transcriptSegments.forEach(function(seg) {
     if (withTimestamps) {
-      output += '[' + seg.time + '] ' + seg.text + '\n';
+      output += '[' + seg.time + '] ' + seg.text + '\n\n';
     } else {
       output += seg.text + ' ';
     }
@@ -773,7 +942,7 @@ function updateTranscriptView(interim) {
 
 function updateStats() {
   var text = document.getElementById('transcriptOutput').value.trim();
-  var words = text ? text.split(/\s+/).length : 0;
+  var words = text ? text.split(/\s+/).filter(Boolean).length : 0;
   var chars = text.length;
   var readMin = Math.ceil(words / 200);
 
@@ -825,11 +994,10 @@ function exportTranscript(fmt) {
   var content = text;
 
   if (fmt === 'srt') {
-    // Generate SubRip SRT Subtitles
     content = '';
     transcriptSegments.forEach(function(seg, idx) {
       var startSec = parseTimestamp(seg.time);
-      var endSec = startSec + 4; // default 4s subtitle block
+      var endSec = startSec + 4;
       content += (idx + 1) + '\n';
       content += formatSrtTime(startSec) + ' --> ' + formatSrtTime(endSec) + '\n';
       content += seg.text + '\n\n';
