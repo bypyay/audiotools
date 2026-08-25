@@ -14,8 +14,6 @@
 <meta name="robots" content="index, follow">
 <link rel="stylesheet" href="../../assets/css/style.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<!-- In-Browser Whisper AI Engine (Transformers.js WASM) -->
-<script src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js"></script>
 <style>
 /* Dedicated Audio to Transcript Studio Styles */
 .transcript-mode-nav {
@@ -231,15 +229,15 @@
   gap: 6px;
   font-size: 0.82rem;
   font-weight: 700;
-  color: #ef4444;
-  background: #fee2e2;
+  color: #0284c7;
+  background: #e0f2fe;
   padding: 3px 8px;
   border-radius: 20px;
 }
 .live-pulse {
   width: 8px;
   height: 8px;
-  background: #ef4444;
+  background: #0284c7;
   border-radius: 50%;
   animation: pulse 1.2s infinite;
 }
@@ -295,7 +293,7 @@
 
     <div class="tool-header">
       <h1>Audio to Text Converter &amp; Transcriber</h1>
-      <p>Powered by in-browser Whisper AI. Convert audio files (MP3, WAV, M4A, AAC, OGG) or live voice recording into accurate text transcripts and subtitles (.srt, .vtt, .txt) with zero server uploads.</p>
+      <p>Powered by OpenAI Whisper AI. Convert audio files (MP3, WAV, M4A, AAC, OGG) or live voice recording into accurate text transcripts and subtitles (.srt, .vtt, .txt) with zero server uploads.</p>
     </div>
 
     <!-- Mode Selector Tabs -->
@@ -334,22 +332,22 @@
       <div style="display:flex; align-items:center; gap:8px;">
         <label style="font-weight:700; font-size:0.88rem; color:#0f172a;"><i class="fa-solid fa-language" style="color:#0284c7;"></i> Speech Language:</label>
         <select id="speechLangSelect" class="calc-select" style="padding:6px 12px; border-radius:8px; border:1px solid #cbd5e1; font-family:inherit; font-weight:600;">
-          <option value="english" selected>English</option>
-          <option value="hindi">Hindi (हिंदी)</option>
-          <option value="spanish">Spanish (Español)</option>
-          <option value="french">French (Français)</option>
-          <option value="german">German (Deutsch)</option>
-          <option value="italian">Italian (Italiano)</option>
-          <option value="portuguese">Portuguese (Português)</option>
-          <option value="russian">Russian (Русский)</option>
-          <option value="japanese">Japanese (日本語)</option>
-          <option value="chinese">Chinese (中文)</option>
-          <option value="arabic">Arabic (العربية)</option>
-          <option value="bengali">Bengali (বাংলা)</option>
-          <option value="marathi">Marathi (मराठी)</option>
-          <option value="tamil">Tamil (தமிழ்)</option>
-          <option value="telugu">Telugu (తెలుగు)</option>
-          <option value="urdu">Urdu (اردو)</option>
+          <option value="en" selected>English</option>
+          <option value="hi">Hindi (हिंदी)</option>
+          <option value="es">Spanish (Español)</option>
+          <option value="fr">French (Français)</option>
+          <option value="de">German (Deutsch)</option>
+          <option value="it">Italian (Italiano)</option>
+          <option value="pt">Portuguese (Português)</option>
+          <option value="ru">Russian (Русский)</option>
+          <option value="ja">Japanese (日本語)</option>
+          <option value="zh">Chinese (中文)</option>
+          <option value="ar">Arabic (العربية)</option>
+          <option value="bn">Bengali (বাংলা)</option>
+          <option value="mr">Marathi (मराठी)</option>
+          <option value="ta">Tamil (தமிழ்)</option>
+          <option value="te">Telugu (తెలుగు)</option>
+          <option value="ur">Urdu (اردو)</option>
         </select>
       </div>
 
@@ -364,7 +362,7 @@
     <!-- AI Progress Container -->
     <div id="aiProgressBox" class="ai-progress-container" style="max-width:800px; margin:20px auto 0;">
       <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.9rem; font-weight:700; color:#0f766e;">
-        <span id="aiProgressText"><i class="fa-solid fa-gear fa-spin"></i> Initializing In-Browser AI Engine…</span>
+        <span id="aiProgressText"><i class="fa-solid fa-gear fa-spin"></i> Initializing Whisper AI Engine…</span>
         <span id="aiProgressPct">0%</span>
       </div>
       <div class="ai-progress-track">
@@ -592,19 +590,160 @@
 </footer>
 
 <script src="../../assets/js/audio-core.js"></script>
+<script type="module">
+// ══════════════════════════════════════════════════════════════════
+// IN-BROWSER WHISPER AI PIPELINE (ESM NATIVE BINDING)
+// ══════════════════════════════════════════════════════════════════
+let whisperPipeline = null;
+let transformersModule = null;
+
+async function loadWhisper() {
+  if (whisperPipeline) return whisperPipeline;
+
+  const progressBox = document.getElementById('aiProgressBox');
+  const progressText = document.getElementById('aiProgressText');
+  const progressPct = document.getElementById('aiProgressPct');
+  const progressBar = document.getElementById('aiProgressBar');
+
+  progressBox.style.display = 'block';
+  progressText.innerHTML = '<i class="fa-solid fa-download fa-bounce"></i> Loading Whisper AI Engine (WASM)...';
+
+  try {
+    // Dynamic ESM Import from jsDelivr / cdn
+    if (!transformersModule) {
+      transformersModule = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
+    }
+
+    transformersModule.env.allowLocalModels = false;
+    transformersModule.env.useBrowserCache = true;
+
+    whisperPipeline = await transformersModule.pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny', {
+      quantized: true,
+      progress_callback: (d) => {
+        if (d.status === 'progress') {
+          const pct = Math.round(d.progress || 0);
+          progressPct.textContent = pct + '%';
+          progressBar.style.width = pct + '%';
+          if (d.file) {
+            progressText.innerHTML = `<i class="fa-solid fa-download fa-bounce"></i> Downloading AI Model: ${d.file} (${pct}%)`;
+          }
+        } else if (d.status === 'ready') {
+          progressText.innerHTML = '<i class="fa-solid fa-brain"></i> Whisper AI Model Ready in Browser!';
+        }
+      }
+    });
+
+    return whisperPipeline;
+  } catch (err) {
+    console.error("Whisper loading error:", err);
+    throw err;
+  }
+}
+
+window.startAudioFileTranscription = async function() {
+  if (!window.currentAudioBuffer) {
+    alert("Please upload an audio file first.");
+    return;
+  }
+
+  const progressBox = document.getElementById('aiProgressBox');
+  const progressText = document.getElementById('aiProgressText');
+  const progressPct = document.getElementById('aiProgressPct');
+  const progressBar = document.getElementById('aiProgressBar');
+  const liveBadge = document.getElementById('transcribeLiveBadge');
+  const btn = document.getElementById('btnStartFileTranscription');
+
+  progressBox.style.display = 'block';
+  liveBadge.style.display = 'inline-flex';
+  btn.disabled = true;
+  btn.style.opacity = '0.6';
+
+  try {
+    // 1. Ensure Model is Loaded
+    const pipeline = await loadWhisper();
+
+    // 2. Convert Audio to 16kHz Float32Array PCM
+    progressText.innerHTML = '<i class="fa-solid fa-wave-square"></i> Resampling audio to 16,000Hz PCM…';
+    progressBar.style.width = '30%';
+    progressPct.textContent = '30%';
+
+    const pcmData = await convertAudioBufferTo16kHz(window.currentAudioBuffer);
+
+    // 3. Run Inference
+    progressText.innerHTML = '<i class="fa-solid fa-brain fa-pulse"></i> AI Transcribing Speech & Timestamps…';
+    progressBar.style.width = '60%';
+    progressPct.textContent = '60%';
+
+    const selectedLang = document.getElementById('speechLangSelect').value || 'en';
+
+    const output = await pipeline(pcmData, {
+      chunk_length_s: 30,
+      stride_length_s: 5,
+      return_timestamps: true,
+      language: selectedLang,
+      task: 'transcribe'
+    });
+
+    // 4. Update Segments
+    window.transcriptSegments = [];
+    if (output.chunks && output.chunks.length > 0) {
+      output.chunks.forEach(chunk => {
+        const start = chunk.timestamp ? chunk.timestamp[0] : 0;
+        const timeStr = AudioCore.formatTime(start);
+        window.transcriptSegments.push({ time: timeStr, text: chunk.text.trim() });
+      });
+    } else {
+      window.transcriptSegments.push({ time: '00:00', text: output.text.trim() });
+    }
+
+    window.updateTranscriptView();
+
+    progressBar.style.width = '100%';
+    progressPct.textContent = '100%';
+    progressText.innerHTML = '<i class="fa-solid fa-check-circle" style="color:#10b981;"></i> Transcription Complete!';
+
+    setTimeout(() => {
+      progressBox.style.display = 'none';
+    }, 2500);
+
+  } catch (err) {
+    console.error("Transcription error:", err);
+    progressText.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#ef4444;"></i> ${err.message}`;
+    alert("Transcription error: " + err.message);
+  } finally {
+    liveBadge.style.display = 'none';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  }
+};
+
+function convertAudioBufferTo16kHz(audioBuffer) {
+  const targetSampleRate = 16000;
+  const offlineCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(
+    1,
+    Math.ceil(audioBuffer.duration * targetSampleRate),
+    targetSampleRate
+  );
+  const source = offlineCtx.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(offlineCtx.destination);
+  source.start(0);
+
+  return offlineCtx.startRendering().then(renderedBuffer => {
+    return renderedBuffer.getChannelData(0);
+  });
+}
+</script>
 <script>
 // ══════════════════════════════════════════════════════════════════
-// IN-BROWSER WHISPER AI & WEB SPEECH HYBRID PIPELINE
+// UI & AUDIO PLAYER CONTROLLER
 // ══════════════════════════════════════════════════════════════════
-var currentAudioBuffer = null;
-var currentAudioFile = null;
+window.currentAudioBuffer = null;
+window.transcriptSegments = [];
 var audioElement = new Audio();
 var recognition = null;
 var isLiveRecording = false;
-var transcriptSegments = [];
 var activeMode = 'upload';
-var whisperPipeline = null;
-var isWhisperLoading = false;
 
 // Mode Switching
 function setTranscribeMode(mode) {
@@ -645,13 +784,12 @@ if (dropzone && fileInput) {
 }
 
 function loadAudioFile(file) {
-  currentAudioFile = file;
   document.getElementById('audioFileNameTitle').textContent = file.name;
   var objectUrl = URL.createObjectURL(file);
   audioElement.src = objectUrl;
 
   AudioCore.decodeAudioFile(file).then(function(buffer) {
-    currentAudioBuffer = buffer;
+    window.currentAudioBuffer = buffer;
     document.getElementById('totalTimeText').textContent = AudioCore.formatTime(buffer.duration);
     document.getElementById('transcriptWorkspace').style.display = 'grid';
     drawWaveform();
@@ -663,12 +801,12 @@ function loadAudioFile(file) {
 // Waveform Visualizer
 function drawWaveform() {
   var canvas = document.getElementById('transcriptWaveform');
-  if (!canvas || !currentAudioBuffer) return;
+  if (!canvas || !window.currentAudioBuffer) return;
   var ctx = canvas.getContext('2d');
   canvas.width = canvas.parentElement.clientWidth || 500;
   canvas.height = 80;
 
-  var data = currentAudioBuffer.getChannelData(0);
+  var data = window.currentAudioBuffer.getChannelData(0);
   var step = Math.ceil(data.length / canvas.width);
   var amp = canvas.height / 2;
 
@@ -713,130 +851,7 @@ function setPlaybackSpeed(spd) {
   audioElement.playbackRate = parseFloat(spd);
 }
 
-// ══════════════════════════════════════════════════════════════════
-// 16kHz PCM CONVERTER FOR WHISPER AI
-// ══════════════════════════════════════════════════════════════════
-function convertAudioBufferTo16kHz(audioBuffer) {
-  var targetSampleRate = 16000;
-  var offlineCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(
-    1,
-    Math.ceil(audioBuffer.duration * targetSampleRate),
-    targetSampleRate
-  );
-  var source = offlineCtx.createBufferSource();
-  source.buffer = audioBuffer;
-  source.connect(offlineCtx.destination);
-  source.start(0);
-
-  return offlineCtx.startRendering().then(function(renderedBuffer) {
-    return renderedBuffer.getChannelData(0); // Float32Array at 16kHz
-  });
-}
-
-// ══════════════════════════════════════════════════════════════════
-// WHISPER AI TRANSCRIPTION PIPELINE
-// ══════════════════════════════════════════════════════════════════
-async function startAudioFileTranscription() {
-  if (!currentAudioBuffer) {
-    alert("Please upload an audio file first.");
-    return;
-  }
-
-  var progressBox = document.getElementById('aiProgressBox');
-  var progressText = document.getElementById('aiProgressText');
-  var progressPct = document.getElementById('aiProgressPct');
-  var progressBar = document.getElementById('aiProgressBar');
-  var liveBadge = document.getElementById('transcribeLiveBadge');
-  var btn = document.getElementById('btnStartFileTranscription');
-
-  progressBox.style.display = 'block';
-  liveBadge.style.display = 'inline-flex';
-  btn.disabled = true;
-  btn.style.opacity = '0.6';
-
-  try {
-    // 1. Initialize Whisper AI Model
-    if (!whisperPipeline) {
-      progressText.innerHTML = '<i class="fa-solid fa-download fa-bounce"></i> Loading In-Browser Whisper AI Model (~39MB)...';
-      
-      var transformers = window.transformers;
-      if (!transformers) {
-        throw new Error("Transformers.js library is loading. Please check internet connection.");
-      }
-
-      transformers.env.allowLocalModels = false;
-      transformers.env.useBrowserCache = true;
-
-      whisperPipeline = await transformers.pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny', {
-        quantized: true,
-        progress_callback: function(d) {
-          if (d.status === 'progress') {
-            var pct = Math.round(d.progress || 0);
-            progressPct.textContent = pct + '%';
-            progressBar.style.width = pct + '%';
-          }
-        }
-      });
-    }
-
-    // 2. Convert AudioBuffer to 16kHz PCM
-    progressText.innerHTML = '<i class="fa-solid fa-wave-square"></i> Decoding & resampling audio waveform to 16kHz…';
-    progressBar.style.width = '40%';
-    progressPct.textContent = '40%';
-
-    var pcmData = await convertAudioBufferTo16kHz(currentAudioBuffer);
-
-    // 3. Run Inference
-    progressText.innerHTML = '<i class="fa-solid fa-brain fa-pulse"></i> AI Transcribing Speech to Text…';
-    progressBar.style.width = '70%';
-    progressPct.textContent = '70%';
-
-    var selectedLang = document.getElementById('speechLangSelect').value || 'english';
-
-    var output = await whisperPipeline(pcmData, {
-      chunk_length_s: 30,
-      stride_length_s: 5,
-      return_timestamps: true,
-      language: selectedLang,
-      task: 'transcribe'
-    });
-
-    // 4. Process Outputs & Timestamps
-    transcriptSegments = [];
-    if (output.chunks && output.chunks.length > 0) {
-      output.chunks.forEach(function(chunk) {
-        var start = chunk.timestamp ? chunk.timestamp[0] : 0;
-        var timeStr = AudioCore.formatTime(start);
-        transcriptSegments.push({ time: timeStr, text: chunk.text.trim() });
-      });
-    } else {
-      transcriptSegments.push({ time: '00:00', text: output.text.trim() });
-    }
-
-    updateTranscriptView();
-
-    progressBar.style.width = '100%';
-    progressPct.textContent = '100%';
-    progressText.innerHTML = '<i class="fa-solid fa-check-circle" style="color:#10b981;"></i> Transcription Complete!';
-
-    setTimeout(function() {
-      progressBox.style.display = 'none';
-    }, 2500);
-
-  } catch (err) {
-    console.error("Transcription error:", err);
-    progressText.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#ef4444;"></i> ' + err.message;
-    alert("Transcription error: " + err.message);
-  } finally {
-    liveBadge.style.display = 'none';
-    btn.disabled = false;
-    btn.style.opacity = '1';
-  }
-}
-
-// ══════════════════════════════════════════════════════════════════
-// LIVE MICROPHONE DICTATION (Web Speech API)
-// ══════════════════════════════════════════════════════════════════
+// Live Mic Dictation (Web Speech API)
 function initSpeechEngine() {
   var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
@@ -848,25 +863,25 @@ function initSpeechEngine() {
   rec.interimResults = true;
 
   var langMap = {
-    'english': 'en-US',
-    'hindi': 'hi-IN',
-    'spanish': 'es-ES',
-    'french': 'fr-FR',
-    'german': 'de-DE',
-    'italian': 'it-IT',
-    'portuguese': 'pt-BR',
-    'russian': 'ru-RU',
-    'japanese': 'ja-JP',
-    'chinese': 'zh-CN',
-    'arabic': 'ar-SA',
-    'bengali': 'bn-IN',
-    'marathi': 'mr-IN',
-    'tamil': 'ta-IN',
-    'telugu': 'te-IN',
-    'urdu': 'ur-PK'
+    'en': 'en-US',
+    'hi': 'hi-IN',
+    'es': 'es-ES',
+    'fr': 'fr-FR',
+    'de': 'de-DE',
+    'it': 'it-IT',
+    'pt': 'pt-BR',
+    'ru': 'ru-RU',
+    'ja': 'ja-JP',
+    'zh': 'zh-CN',
+    'ar': 'ar-SA',
+    'bn': 'bn-IN',
+    'mr': 'mr-IN',
+    'ta': 'ta-IN',
+    'te': 'te-IN',
+    'ur': 'ur-PK'
   };
 
-  var selected = document.getElementById('speechLangSelect').value || 'english';
+  var selected = document.getElementById('speechLangSelect').value || 'en';
   rec.lang = langMap[selected] || 'en-US';
 
   rec.onresult = function(event) {
@@ -875,7 +890,7 @@ function initSpeechEngine() {
       var transcript = event.results[i][0].transcript;
       if (event.results[i].isFinal) {
         var timeStr = AudioCore.formatTime(audioElement.currentTime || 0);
-        transcriptSegments.push({ time: timeStr, text: transcript.trim() });
+        window.transcriptSegments.push({ time: timeStr, text: transcript.trim() });
       } else {
         interimTranscript += transcript;
       }
@@ -916,14 +931,12 @@ function toggleLiveMic() {
   }
 }
 
-// ══════════════════════════════════════════════════════════════════
-// TRANSCRIPT FORMATTING & EXPORT
-// ══════════════════════════════════════════════════════════════════
+// Transcript Formatting & Stats
 function updateTranscriptView(interim) {
   var withTimestamps = document.getElementById('chkTimestamps').checked;
   var output = '';
 
-  transcriptSegments.forEach(function(seg) {
+  (window.transcriptSegments || []).forEach(function(seg) {
     if (withTimestamps) {
       output += '[' + seg.time + '] ' + seg.text + '\n\n';
     } else {
@@ -963,7 +976,7 @@ function copyTranscriptToClipboard() {
 }
 
 function clearTranscript() {
-  transcriptSegments = [];
+  window.transcriptSegments = [];
   document.getElementById('transcriptOutput').value = '';
   updateStats();
 }
@@ -995,7 +1008,7 @@ function exportTranscript(fmt) {
 
   if (fmt === 'srt') {
     content = '';
-    transcriptSegments.forEach(function(seg, idx) {
+    (window.transcriptSegments || []).forEach(function(seg, idx) {
       var startSec = parseTimestamp(seg.time);
       var endSec = startSec + 4;
       content += (idx + 1) + '\n';
@@ -1004,7 +1017,7 @@ function exportTranscript(fmt) {
     });
   } else if (fmt === 'vtt') {
     content = 'WEBVTT\n\n';
-    transcriptSegments.forEach(function(seg, idx) {
+    (window.transcriptSegments || []).forEach(function(seg, idx) {
       var startSec = parseTimestamp(seg.time);
       var endSec = startSec + 4;
       content += formatVttTime(startSec) + ' --> ' + formatVttTime(endSec) + '\n';
